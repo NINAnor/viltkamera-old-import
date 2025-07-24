@@ -1,0 +1,32 @@
+[dependency-groups]
+dev = [
+  "deptry",
+  "pre-commit"
+]
+
+[project]
+authors = [
+  {name = "ninanor", email = "ninanor@nina.no"}
+]
+# PEP 621 project metadata
+# See https://www.python.org/dev/peps/pep-0621/
+dependencies = [
+  "click>=8.2.1",
+  "django-environ",
+  "duckdb>=1.3.2",
+  "sqlacodegen>=3.0.0",
+  "sqlmodel>=0.0.24",
+]
+description = ""
+license = {text = "GPL-3.0+"}
+name = "viltkamera_old_import"
+readme = "README.md"
+requires-python = ">=3.10"
+version = "0.1.0"
+
+[tool.ruff]
+fix = true
+
+[tool.ruff.lint]
+ignore = ["COM812"]
+select = ["E", "W", "I", "F", "UP", "S", "B", "A", "COM", "LOG", "PTH", "Q"]
