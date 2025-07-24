@@ -1,11 +1,15 @@
 # viltkamera-old-import
 
+A tool to import old projects, timeseries and images exported by the (https://github.com/NINAnor/viltkamera-old-export)[export tool] in the new database.
+
+Once the migration is completed the reposiory will be archived.
+
 ## Setup
 Install `uv`: https://docs.astral.sh/uv/getting-started/installation/
 
 ```bash
 git init
-uv sync
+uv sync --dev
 git add .
 git commit -m "Initial commit"
 uv run pre-commit install # optional
@@ -13,19 +17,48 @@ uv run pre-commit install # optional
 
 
 ### Run
-To execute your software run:
-```
+To execute your software you have two options:
+
+**Option 1: Direct execution**
+```bash
 uv run main.py
+```
+
+**Option 2: Run as installed package**
+```bash
+uvx --from . viltkamera_old_import
 ```
 
 ### Development
 Just run `uv run main.py` and you are good to go!
 
+### Update from template
+To update your project with the latest changes from the template, run:
+```bash
+uvx --with copier-template-extensions copier update --trust
+```
+
+You can keep your previous answers by using:
+```bash
+uvx --with copier-template-extensions copier update --trust --defaults
+```
+
 ### (Optional) pre-commit
 pre-commit is a set of tools that help you ensure code quality. It runs every time you make a commit.
-To install pre-commit hooks run:
+
+First, install pre-commit:
 ```bash
-uv run pre-commit install
+uv tool install pre-commit
+```
+
+Then install pre-commit hooks:
+```bash
+pre-commit install
+```
+
+To run pre-commit on all files:
+```bash
+pre-commit run --all-files
 ```
 
 ### How to install a package

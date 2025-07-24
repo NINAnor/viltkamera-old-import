@@ -1,28 +1,53 @@
 [dependency-groups]
-dev = [
-  "deptry",
-  "pre-commit"
-]
+dev = ["deptry", "sqlacodegen[sqlmodel]>=3.0.0"]
 
 [project]
-authors = [
-  {name = "ninanor", email = "ninanor@nina.no"}
-]
+authors = [{name = "ninanor", email = "ninanor@nina.no"}]
 # PEP 621 project metadata
 # See https://www.python.org/dev/peps/pep-0621/
 dependencies = [
+  "aiohttp>=3.12.15",
+  "backoff>=2.2.1",
+  "better-exceptions>=0.3.3",
   "click>=8.2.1",
   "django-environ",
   "duckdb>=1.3.2",
-  "sqlacodegen>=3.0.0",
+  "fsspec>=2025.7.0",
+  "numpy>=2.2.6",
+  "pillow>=11.3.0",
+  "psycopg2-binary>=2.9.10",
+  "psycopg[binary]>=3.2.9",
+  "pyarrow>=21.0.0",
+  "python-dateutil>=2.9.0.post0",
+  "requests>=2.32.4",
+  "rich>=14.1.0",
+  "s3fs>=2025.7.0",
+  "sqlalchemy>=2.0.41",
   "sqlmodel>=0.0.24",
+  "structlog>=25.4.0",
+  "tqdm>=4.67.1"
 ]
 description = ""
-license = {text = "GPL-3.0+"}
+license = "GPL-3.0+"
 name = "viltkamera_old_import"
 readme = "README.md"
 requires-python = ">=3.10"
 version = "0.1.0"
+
+[project.scripts]
+viltkamera_old_import = "main:start"
+viltkamera_old_import_range = "in_range:start"
+
+[tool.deptry.per_rule_ignores]
+DEP002 = [
+  "psycopg",
+  "aiohttp",
+  "pyarrow",
+  "rich",
+  "better-exceptions",
+  "psycopg2-binary",
+  "numpy"
+]
 
 [tool.ruff]
 fix = true
