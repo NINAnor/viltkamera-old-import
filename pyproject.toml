@@ -35,8 +35,8 @@ requires-python = ">=3.10"
 version = "0.1.0"
 
 [project.scripts]
-viltkamera_old_import = "main:start"
-viltkamera_old_import_range = "in_range:start"
+viltkamera_old_import = "old_import.main:start"
+viltkamera_old_import_range = "old_import.in_range:start"
 
 [tool.deptry.per_rule_ignores]
 DEP002 = [

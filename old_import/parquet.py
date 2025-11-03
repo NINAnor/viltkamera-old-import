@@ -1,5 +1,4 @@
 import json
-import pathlib
 from datetime import datetime
 
 import duckdb

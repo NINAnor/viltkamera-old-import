@@ -5,8 +5,8 @@ import click
 import duckdb
 import environ
 
-from libs.logger import configure_logger
-from main import start as import_start
+from .logger import configure_logger
+from .main import start as import_start
 
 env = environ.Env()
 BASE_DIR = pathlib.Path(__file__).parent

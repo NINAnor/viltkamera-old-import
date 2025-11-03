@@ -11,9 +11,9 @@ import environ
 import s3fs
 from sqlmodel import Session, create_engine
 
-from libs.logger import configure_logger
-from libs.parquet import clean_dataset, get_dataset_by_id
-from libs.utils import get_labels
+from .logger import configure_logger
+from .parquet import clean_dataset, get_dataset_by_id
+from .utils import get_labels
 
 env = environ.Env()
 BASE_DIR = pathlib.Path(__file__).parent
