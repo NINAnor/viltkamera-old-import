@@ -1618,7 +1618,7 @@ requires-dist = [
     { name = "better-exceptions", specifier = ">=0.3.3" },
     { name = "click", specifier = ">=8.2.1" },
     { name = "django-environ" },
-    { name = "duckdb", specifier = ">=1.3.2" },
+    { name = "duckdb", specifier = "==1.3.2" },
     { name = "fsspec", specifier = ">=2025.7.0" },
     { name = "numpy", specifier = ">=2.2.6" },
     { name = "pillow", specifier = ">=11.3.0" },
