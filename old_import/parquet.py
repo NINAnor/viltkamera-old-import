@@ -223,7 +223,7 @@ def process_timeseries(
         connection.execute(
             f"""
                 with timeseries_image as (
-                    from read_parquet('{timeseries_path}/timeseries.parquet/*')
+                    from read_parquet('{timeseries_path}')
                         select selected_image,
                         unnest(images) as image_id,
                         generate_subscripts(images, 1) AS image_index,
@@ -234,7 +234,7 @@ def process_timeseries(
                     tsi.image_index as image_index,
                     tsi.selected_image as selected_image,
                 from timeseries_image as tsi
-                join read_parquet('{image_path}/images_metadata.parquet/*') as img on tsi.image_id = img.id
+                join read_parquet('{image_path}') as img on tsi.image_id = img.id
                 order by image_index
                 """,  # noqa: E501, S608
             [timeseries.ext_id],
