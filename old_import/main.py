@@ -47,6 +47,8 @@ def start(dataset_id, verbose, vverbose, clean, single) -> None:
 
     duck_conn = duckdb.connect()
 
+    duck_conn.sql("SET memory_limit = 500MB;")
+
     if clean:
         with Session(engine) as s:
             clean_dataset(s, dataset_id)
