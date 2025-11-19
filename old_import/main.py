@@ -75,9 +75,6 @@ def start(dataset_id, verbose, vverbose, clean, single) -> None:
         image_target_path=f"s3://{env('S3_BUCKET')}/media/",
         image_source_path=f"{env('API_URL')}/images/",
         log=log,
-        api_user=env("API_USER"),
-        api_password=env("API_PASSWORD"),
-        api_base=env("API_URL"),
         single=single,
         s3=s3,
     )

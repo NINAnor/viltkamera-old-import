@@ -15,7 +15,7 @@ from .models import (
     WildCamerasTimeseries,
     WildCamerasValidationrevision,
 )
-from .utils import blur_image, get_http_session, get_or_create, read_image_from_url
+from .utils import blur_image, get_or_create, read_image_from_url
 
 
 def get_dataset_by_id(
@@ -29,15 +29,10 @@ def get_dataset_by_id(
     image_source_path: str,
     image_target_path: str,
     log,
-    api_user,
-    api_password,
-    api_base,
     s3,
     single=False,
 ):
     log = log.bind(dataset_id=dataset_id)
-
-    http_config = get_http_session(api_base, api_user, api_password, log)
 
     datasets = (
         connection.execute(
@@ -185,7 +180,6 @@ def get_dataset_by_id(
                         label_map=label_map,
                         timeseries=timeseries,
                         log=log,
-                        http_config=http_config,
                         s3=s3,
                     )
                     session.commit()
@@ -216,7 +210,6 @@ def process_timeseries(
     image_source_path: str,
     image_target_path: str,
     log,
-    http_config,
     s3,
 ):
     images = (
@@ -247,9 +240,7 @@ def process_timeseries(
     for i in images:
         file_path = f"processed/tsimages/imported/{i['id']}"
 
-        pil_image = read_image_from_url(
-            url=f"{image_source_path}{i['id']}", http_config=http_config, log=log
-        )
+        pil_image = read_image_from_url(url=f"{image_source_path}{i['id']}", log=log)
 
         image = WildCamerasImage(
             uuid=i["id"],

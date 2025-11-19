@@ -64,8 +64,8 @@ def get_labels(engine) -> tuple[dict[str, int], list[str]]:
     ),
     max_time=30,
 )
-def read_image_from_url(url, http_config, log) -> Image:
-    with fsspec.open(url, mode="rb", client_kwargs=http_config) as source_file:
+def read_image_from_url(url, log) -> Image:
+    with fsspec.open(url, mode="rb") as source_file:
         return Image.open(io.BytesIO(source_file.read()))
 
 
