@@ -1,6 +1,6 @@
 # viltkamera-old-import
 
-A tool to import old projects, timeseries and images exported by the (https://github.com/NINAnor/viltkamera-old-export)[export tool] in the new database.
+A tool to import old projects, timeseries and images exported by the [export tool](https://github.com/NINAnor/viltkamera-old-export) in the new database.
 
 Once the migration is completed the reposiory will be archived.
 
