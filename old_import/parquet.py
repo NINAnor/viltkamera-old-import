@@ -50,12 +50,13 @@ def get_dataset_by_id(
     with Session(engine) as s:
         log.debug("Get location of this dataset")
 
+        camera_id = int(str(ds["camera_id"]).split("_")[0])
         location, created = get_or_create(
             session=s,
             model=WildCamerasLocation,
-            getter=col(WildCamerasLocation.id) == int(ds["camera_id"]),
+            getter=col(WildCamerasLocation.id) == camera_id,
             defaults={
-                "id": ds["camera_id"],
+                "id": camera_id,
                 "created_at": datetime.now(tz.UTC),
                 "last_modified_at": datetime.now(tz.UTC),
             },
