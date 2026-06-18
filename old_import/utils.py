@@ -1,10 +1,11 @@
 import io
+from typing import TypeVar
 
 import backoff
 import fsspec
 import requests
 from PIL import Image, ImageFilter
-from sqlalchemy import exc
+from sqlalchemy import ColumnElement, exc
 from sqlmodel import Session, SQLModel, select
 
 from .models import WildCamerasAnnotationlabel, WildCamerasBboxannotation
@@ -41,12 +42,7 @@ def get_labels(engine) -> tuple[dict[str, int], list[str]]:
     blur_labels = []
 
     with Session(engine) as s:
-        stmt = select(
-            WildCamerasAnnotationlabel.id,
-            WildCamerasAnnotationlabel.text_,
-            WildCamerasAnnotationlabel.blur,
-        )
-        res = s.exec(stmt)
+        res = s.exec(select(WildCamerasAnnotationlabel)).all()
 
     for row in res:
         label_map[row.text_] = row.id
@@ -64,14 +60,17 @@ def get_labels(engine) -> tuple[dict[str, int], list[str]]:
     ),
     max_time=30,
 )
-def read_image_from_url(url, log) -> Image:
+def read_image_from_url(url, log) -> Image.Image:
     with fsspec.open(url, mode="rb") as source_file:
         return Image.open(io.BytesIO(source_file.read()))
 
 
+T = TypeVar("T", bound=SQLModel)
+
+
 def get_or_create(
-    session: Session, model, getter: dict, defaults
-) -> tuple[SQLModel, bool]:
+    session: Session, model: type[T], getter: ColumnElement[bool], defaults: dict
+) -> tuple[T, bool]:
     stmt = select(model).where(getter)
 
     result = session.exec(stmt)
@@ -86,19 +85,22 @@ def get_or_create(
 # based on https://gitlab.com/nina-data/viltkamera/viltkamera-blur/-/blob/main/viltkamera-blur.py
 
 
-def blur_image(img: Image, bbox: WildCamerasBboxannotation, log) -> Image:
+def blur_image(img: Image.Image, bbox: WildCamerasBboxannotation, log) -> Image.Image:
     """
     Blur an Image (PIL) given a BBoxAnnotation
     """
     log.debug("Blurring image...")
     width, height = img.size
+    x_min, y_min, x_max, y_max = bbox.x_min, bbox.y_min, bbox.x_max, bbox.y_max
+    if x_min is None or y_min is None or x_max is None or y_max is None:
+        raise ValueError(f"BBox {bbox.id} has None coordinates, cannot blur")
     box = [
         round(number)
         for number in (
-            bbox.x_min * width,
-            bbox.y_min * height,
-            bbox.x_max * width,
-            bbox.y_max * height,
+            x_min * width,
+            y_min * height,
+            x_max * width,
+            y_max * height,
         )
     ]
     cropped = img.crop(box)

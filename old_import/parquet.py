@@ -5,7 +5,7 @@ import duckdb
 import tqdm
 from dateutil import tz
 from dateutil.parser import parse
-from sqlmodel import Session, delete, select
+from sqlmodel import Session, col, delete, select
 
 from .models import (
     WildCamerasBboxannotation,
@@ -53,7 +53,7 @@ def get_dataset_by_id(
         location, created = get_or_create(
             session=s,
             model=WildCamerasLocation,
-            getter=WildCamerasLocation.id == int(ds["camera_id"]),
+            getter=col(WildCamerasLocation.id) == int(ds["camera_id"]),
             defaults={
                 "id": ds["camera_id"],
                 "created_at": datetime.now(tz.UTC),
@@ -69,7 +69,7 @@ def get_dataset_by_id(
         dataset, created = get_or_create(
             session=s,
             model=WildCamerasDataset,
-            getter=WildCamerasDataset.ext_id == int(ds["id"]),
+            getter=col(WildCamerasDataset.ext_id) == int(ds["id"]),
             defaults={
                 "locked": True,
                 "comment": "",
@@ -92,7 +92,7 @@ def get_dataset_by_id(
             old_ids = s.scalars(
                 select(WildCamerasTimeseries.ext_id).where(
                     WildCamerasTimeseries.dataset_id == dataset_db_id,
-                    WildCamerasTimeseries.ext_id.is_not(None),
+                    col(WildCamerasTimeseries.ext_id).is_not(None),
                 )
             ).all()
         else:
@@ -128,7 +128,7 @@ def get_dataset_by_id(
             timeseries, created = get_or_create(
                 session=session,
                 model=WildCamerasTimeseries,
-                getter=WildCamerasTimeseries.ext_id == ts["id"],
+                getter=col(WildCamerasTimeseries.ext_id) == ts["id"],
                 defaults={
                     "created_at": parse(ts["created_at"]),
                     "last_modified_at": parse(ts["updated_at"]),
