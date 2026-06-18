@@ -85,9 +85,8 @@ def get_dataset_by_id(
         )
         log.debug("done", object=dataset, created=created)
 
-        s.commit()
+        s.flush()
         dataset_db_id = dataset.id
-        log.debug("committed", dataset_db_id=dataset_db_id)
 
         if not created:
             old_ids = s.scalars(
@@ -99,26 +98,34 @@ def get_dataset_by_id(
         else:
             old_ids = []
 
-    # TODO: get the ids of the already loaded timeseries
-    timeseries_set = (
-        connection.execute(
-            f"""
-                from read_parquet('{timeseries_path}')
-                    select *,
-                where id in (
-                    from read_parquet('{project_path}')
-                    select unnest(timeseries) as id
-                    where id = $1
-                ) and id not in $2
-                order by id
-                """,  # noqa: E501, S608
-            [dataset_id, old_ids],
+        # TODO: get the ids of the already loaded timeseries
+        timeseries_set = (
+            connection.execute(
+                f"""
+                    from read_parquet('{timeseries_path}')
+                        select *,
+                    where id in (
+                        from read_parquet('{project_path}')
+                        select unnest(timeseries) as id
+                        where id = $1
+                    ) and id not in $2
+                    order by id
+                    """,  # noqa: E501, S608
+                [dataset_id, old_ids],
+            )
+            .fetch_arrow_table()
+            .to_pylist()
         )
-        .fetch_arrow_table()
-        .to_pylist()
-    )
 
-    log.debug("found %s timeseries", len(timeseries_set))
+        log.debug("found %s timeseries", len(timeseries_set))
+
+        if not timeseries_set:
+            if created:
+                log.info("Dataset has no timeseries, skipping")
+            return
+
+        s.commit()
+        log.debug("committed", dataset_db_id=dataset_db_id)
 
     for ts in tqdm.tqdm(timeseries_set):
         with Session(engine) as session:
