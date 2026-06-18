@@ -3,7 +3,9 @@ from typing import TypeVar
 
 import backoff
 import fsspec
+import fsspec.exceptions
 import requests
+import requests.exceptions
 from PIL import Image, ImageFilter
 from sqlalchemy import ColumnElement, exc
 from sqlmodel import Session, SQLModel, select
