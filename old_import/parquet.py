@@ -92,7 +92,7 @@ def get_dataset_by_id(
             old_ids = s.scalars(
                 select(WildCamerasTimeseries.ext_id).where(
                     WildCamerasTimeseries.dataset_id == dataset_db_id,
-                    WildCamerasTimeseries.ext_id is not None,
+                    WildCamerasTimeseries.ext_id.is_not(None),
                 )
             ).all()
         else:
