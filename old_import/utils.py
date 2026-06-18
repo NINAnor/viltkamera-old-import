@@ -106,7 +106,7 @@ def blur_image(img: Image.Image, bbox: WildCamerasBboxannotation, log) -> Image.
         )
     ]
     cropped = img.crop(box)
-    blurred = cropped.filter(ImageFilter.GaussianBlur(50))
+    blurred = cropped.filter(ImageFilter.BoxBlur(50))
     img.paste(blurred, (box[0], box[1]))
     log.debug("done")
     return img
