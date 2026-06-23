@@ -1,10 +1,14 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
 [dependency-groups]
 dev = ["deptry", "sqlacodegen[sqlmodel]>=3.0.0"]
 
 [project]
 authors = [
-    {name = "Niccolò Cantù", email = "niccolo.cantu@nina.no"},
-    {name = "Francesco Frassinelli", email = "francesco.frassinelli@nina.no"}
+  {name = "Niccolò Cantù", email = "niccolo.cantu@nina.no"},
+  {name = "Francesco Frassinelli", email = "francesco.frassinelli@nina.no"}
 ]
 # PEP 621 project metadata
 # See https://www.python.org/dev/peps/pep-0621/
@@ -28,7 +32,7 @@ dependencies = [
   "sqlmodel>=0.0.24",
   "structlog>=25.4.0",
   "tqdm>=4.67.1",
-  "types-requests>=2.33.0.20260518",
+  "types-requests>=2.33.0.20260518"
 ]
 description = "Migrate Viltkamera datasets from the old solution (2027-2024) to the new one"
 license = "GPL-3.0+"
@@ -54,9 +58,15 @@ DEP002 = [
   "numpy"
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["old_import"]
+
 [tool.ruff]
 fix = true
 
 [tool.ruff.lint]
 ignore = ["COM812"]
 select = ["E", "W", "I", "F", "UP", "S", "B", "A", "COM", "LOG", "PTH", "Q"]
+
+[tool.uv]
+package = true

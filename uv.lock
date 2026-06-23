@@ -1835,7 +1835,7 @@ wheels = [
 [[package]]
 name = "viltkamera-old-import"
 version = "0.1.1"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "backoff" },
