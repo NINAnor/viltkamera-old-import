@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from datetime import datetime
 
 import duckdb
@@ -127,6 +128,55 @@ def get_dataset_by_id(
         s.commit()
         log.debug("committed", dataset_db_id=dataset_db_id)
 
+    # Pre-fetch images for all new timeseries in one DuckDB scan
+    timeseries_ids = [ts["id"] for ts in timeseries_set]
+    images_by_timeseries = defaultdict(list)
+
+    if timeseries_ids:
+        ts_images = (
+            connection.execute(
+                f"""
+                    select id, unnest(images) as image_id,
+                           generate_subscripts(images, 1) AS image_index,
+                           selected_image
+                    from read_parquet('{timeseries_path}')
+                    where id in ({", ".join("?" for _ in timeseries_ids)})
+                """,
+                timeseries_ids,
+            )
+            .fetch_arrow_table()
+            .to_pylist()
+        )
+        all_image_ids = list({r["image_id"] for r in ts_images})
+
+        if all_image_ids:
+            image_records = (
+                connection.execute(
+                    f"""
+                        select * exclude (ground_truth_label, ground_truth_boxes)
+                        from read_parquet('{image_path}')
+                        where id in ({", ".join("?" for _ in all_image_ids)})
+                    """,
+                    all_image_ids,
+                )
+                .fetch_arrow_table()
+                .to_pylist()
+            )
+            image_map = {img["id"]: img for img in image_records}
+
+            for r in ts_images:
+                img_data = image_map.get(r["image_id"])
+                if img_data:
+                    combined = {
+                        **img_data,
+                        "image_index": r["image_index"],
+                        "selected_image": r["selected_image"],
+                    }
+                    images_by_timeseries[r["id"]].append(combined)
+
+            for imgs in images_by_timeseries.values():
+                imgs.sort(key=lambda x: x["image_index"])
+
     for ts in tqdm.tqdm(timeseries_set):
         with Session(engine) as session:
             log.debug("getting timeseries images")
@@ -179,16 +229,14 @@ def get_dataset_by_id(
                 try:
                     process_timeseries(
                         session=session,
-                        connection=connection,
                         dataset_id=dataset_db_id,
-                        timeseries_path=timeseries_path,
-                        image_path=image_path,
                         image_source_path=image_source_path,
                         image_target_path=image_target_path,
                         label_map=label_map,
                         timeseries=timeseries,
                         log=log,
                         s3=s3,
+                        images=images_by_timeseries.get(ts["id"], []),
                     )
                     session.commit()
 
@@ -210,39 +258,14 @@ def get_dataset_by_id(
 def process_timeseries(
     timeseries: WildCamerasTimeseries,
     session: Session,
-    connection: duckdb.DuckDBPyConnection,
-    timeseries_path: str,
-    image_path: str,
     dataset_id: int,
     label_map: tuple[dict[str, int], list[str]],
     image_source_path: str,
     image_target_path: str,
     log,
     s3,
+    images: list[dict],
 ):
-    images = (
-        connection.execute(
-            f"""
-                with timeseries_image as (
-                    from read_parquet('{timeseries_path}')
-                        select selected_image,
-                        unnest(images) as image_id,
-                        generate_subscripts(images, 1) AS image_index,
-                    where id = $1
-                )
-                select
-                    img.* exclude (ground_truth_label, ground_truth_boxes),
-                    tsi.image_index as image_index,
-                    tsi.selected_image as selected_image,
-                from timeseries_image as tsi
-                join read_parquet('{image_path}') as img on tsi.image_id = img.id
-                order by image_index
-                """,  # noqa: E501, S608
-            [timeseries.ext_id],
-        )
-        .fetch_arrow_table()
-        .to_pylist()
-    )
     log.debug("found %s images", len(images))
 
     for i in images:

@@ -3,7 +3,10 @@ build-backend = "hatchling.build"
 requires = ["hatchling"]
 
 [dependency-groups]
-dev = ["deptry", "sqlacodegen[sqlmodel]>=3.0.0"]
+dev = [
+  "deptry",
+  "sqlacodegen[sqlmodel]>=3.0.0"
+]
 
 [project]
 authors = [

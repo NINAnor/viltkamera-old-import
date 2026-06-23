@@ -56,10 +56,7 @@ def get_labels(engine) -> tuple[dict[str, int], list[str]]:
 
 @backoff.on_exception(
     backoff.expo,
-    (
-        fsspec.exceptions.FSTimeoutError,
-        FileNotFoundError,
-    ),
+    fsspec.exceptions.FSTimeoutError,
     max_time=30,
 )
 def read_image_from_url(url, log) -> Image.Image:
