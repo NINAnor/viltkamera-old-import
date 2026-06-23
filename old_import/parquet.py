@@ -1,4 +1,6 @@
+import csv
 import json
+import pathlib
 from collections import defaultdict
 from datetime import datetime
 
@@ -17,6 +19,35 @@ from .models import (
     WildCamerasValidationrevision,
 )
 from .utils import blur_image, get_or_create, read_image_from_url
+
+LOOKUP_PATH = pathlib.Path(__file__).parent / "camera_lookup.csv"
+_CAMERA_LOOKUP: dict[str, int] | None = None
+
+
+def get_camera_lookup() -> dict[str, int]:
+    global _CAMERA_LOOKUP
+    if _CAMERA_LOOKUP is None:
+        lookup = {}
+        with LOOKUP_PATH.open() as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row["camera_id"]:
+                    lookup[row["name"]] = int(row["camera_id"])
+        _CAMERA_LOOKUP = lookup
+    return _CAMERA_LOOKUP
+
+
+def resolve_camera_id(raw: str) -> int:
+    raw = raw.strip()
+    lookup = get_camera_lookup()
+    try:
+        return lookup[raw]
+    except KeyError as err:
+        raise ValueError(
+            f"Cannot resolve camera_id {raw!r}: "
+            f"not found in lookup table "
+            f"(likely test/garbage/duplicate data)"
+        ) from err
 
 
 def get_dataset_by_id(
@@ -51,7 +82,15 @@ def get_dataset_by_id(
     with Session(engine) as s:
         log.debug("Get location of this dataset")
 
-        camera_id = int(str(ds["camera_id"]).split("_")[0])
+        try:
+            camera_id = resolve_camera_id(str(ds["camera_id"]))
+        except ValueError:
+            log.error(
+                "Cannot resolve camera_id",
+                camera_id=str(ds["camera_id"]),
+                dataset_id=dataset_id,
+            )
+            return
         location, created = get_or_create(
             session=s,
             model=WildCamerasLocation,
@@ -141,7 +180,7 @@ def get_dataset_by_id(
                            selected_image
                     from read_parquet('{timeseries_path}')
                     where id in ({", ".join("?" for _ in timeseries_ids)})
-                """,
+                """,  # noqa: S608
                 timeseries_ids,
             )
             .fetch_arrow_table()
@@ -156,7 +195,7 @@ def get_dataset_by_id(
                         select * exclude (ground_truth_label, ground_truth_boxes)
                         from read_parquet('{image_path}')
                         where id in ({", ".join("?" for _ in all_image_ids)})
-                    """,
+                    """,  # noqa: S608
                     all_image_ids,
                 )
                 .fetch_arrow_table()

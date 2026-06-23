@@ -1857,13 +1857,13 @@ dependencies = [
     { name = "sqlmodel" },
     { name = "structlog" },
     { name = "tqdm" },
-    { name = "types-requests" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "deptry" },
     { name = "sqlacodegen", extra = ["sqlmodel"] },
+    { name = "types-requests" },
 ]
 
 [package.metadata]
@@ -1887,13 +1887,13 @@ requires-dist = [
     { name = "sqlmodel", specifier = ">=0.0.24" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "tqdm", specifier = ">=4.67.1" },
-    { name = "types-requests", specifier = ">=2.33.0.20260518" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "deptry" },
     { name = "sqlacodegen", extras = ["sqlmodel"], specifier = ">=3.0.0" },
+    { name = "types-requests", specifier = ">=2.33.0.20260518" },
 ]
 
 [[package]]

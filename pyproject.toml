@@ -5,7 +5,8 @@ requires = ["hatchling"]
 [dependency-groups]
 dev = [
   "deptry",
-  "sqlacodegen[sqlmodel]>=3.0.0"
+  "sqlacodegen[sqlmodel]>=3.0.0",
+  "types-requests>=2.33.0.20260518"
 ]
 
 [project]
@@ -34,8 +35,7 @@ dependencies = [
   "sqlalchemy>=2.0.41",
   "sqlmodel>=0.0.24",
   "structlog>=25.4.0",
-  "tqdm>=4.67.1",
-  "types-requests>=2.33.0.20260518"
+  "tqdm>=4.67.1"
 ]
 description = "Migrate Viltkamera datasets from the old solution (2027-2024) to the new one"
 license = "GPL-3.0+"
@@ -52,16 +52,10 @@ viltkamera_old_import_range = "old_import.in_range:start_range"
 known_first_party = ["src"]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = [
-  "psycopg",
-  "aiohttp",
-  "pyarrow",
-  "rich",
-  "better-exceptions",
-  "numpy"
-]
+DEP002 = ["psycopg", "aiohttp", "pyarrow", "rich", "better-exceptions", "numpy"]
 
 [tool.hatch.build.targets.wheel]
+include = ["old_import/camera_lookup.csv", "old_import/camera_lookup.sql"]
 packages = ["old_import"]
 
 [tool.ruff]
