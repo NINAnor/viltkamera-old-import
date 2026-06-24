@@ -43,17 +43,28 @@ def start_range(ctx, dataset_ids, verbose, vverbose, single) -> None:
 
     log.debug("Found datasets", datasets=datasets)
 
+    failed = 0
     for dataset in datasets:
         dataset_id = dataset["id"]
         log.debug(f"Importing dataset {dataset_id}")
-        ctx.invoke(
-            import_start,
-            dataset_id=dataset_id,
-            verbose=verbose,
-            vverbose=vverbose,
-            single=single,
-            clean=False,
-        )
+        try:
+            ctx.invoke(
+                import_start,
+                dataset_id=dataset_id,
+                verbose=verbose,
+                vverbose=vverbose,
+                single=single,
+                clean=False,
+            )
+        except SystemExit:
+            log.warning("Dataset failed", dataset_id=dataset_id)
+            failed += 1
+
+    log.info(
+        "Range import complete",
+        total=len(datasets),
+        failed=failed,
+    )
 
 
 if __name__ == "__main__":

@@ -5,7 +5,6 @@ from collections import defaultdict
 from datetime import datetime
 
 import duckdb
-import tqdm
 from dateutil import tz
 from dateutil.parser import parse
 from sqlmodel import Session, col, delete, select
@@ -216,7 +215,9 @@ def get_dataset_by_id(
             for imgs in images_by_timeseries.values():
                 imgs.sort(key=lambda x: x["image_index"])
 
-    for ts in tqdm.tqdm(timeseries_set):
+    images_ok = 0
+    errors = 0
+    for ts in timeseries_set:
         with Session(engine) as session:
             log.debug("getting timeseries images")
             log = log.bind(timeseries=ts["id"])
@@ -278,19 +279,26 @@ def get_dataset_by_id(
                         images=images_by_timeseries.get(ts["id"], []),
                     )
                     session.commit()
+                    images_ok += len(images_by_timeseries.get(ts["id"], []))
 
-                except (
-                    KeyboardInterrupt,
-                    duckdb.InterruptException,
-                    RuntimeError,
-                ) as e:
+                except (KeyboardInterrupt, duckdb.InterruptException) as e:
                     raise KeyboardInterrupt from e
+                except Exception as e:
+                    log.warning("error", timeseries=ts["id"], error=str(e))
+                    errors += 1
 
                 if single:
                     break
             else:
                 log.debug("already present, skipping")
 
+    log.info(
+        "Import complete",
+        dataset_id=dataset_id,
+        timeseries=len(timeseries_set),
+        images=images_ok,
+        errors=errors,
+    )
     return True
 
 

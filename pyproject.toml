@@ -34,8 +34,7 @@ dependencies = [
   "s3fs>=2025.7.0",
   "sqlalchemy>=2.0.41",
   "sqlmodel>=0.0.24",
-  "structlog>=25.4.0",
-  "tqdm>=4.67.1"
+  "structlog>=25.4.0"
 ]
 description = "Migrate Viltkamera datasets from the old solution (2027-2024) to the new one"
 license = "GPL-3.0+"
