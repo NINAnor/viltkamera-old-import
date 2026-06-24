@@ -63,7 +63,7 @@ def get_dataset_by_id(
     log,
     s3,
     single=False,
-):
+) -> bool:
     log = log.bind(dataset_id=dataset_id)
 
     datasets = (
@@ -78,7 +78,7 @@ def get_dataset_by_id(
         ds = datasets[0]
     except IndexError:
         log.error("Dataset not found", dataset_id=dataset_id)
-        return
+        return False
     with Session(engine) as s:
         log.debug("Get location of this dataset")
 
@@ -90,7 +90,7 @@ def get_dataset_by_id(
                 camera_id=str(ds["camera_id"]),
                 dataset_id=dataset_id,
             )
-            return
+            return False
         location, created = get_or_create(
             session=s,
             model=WildCamerasLocation,
@@ -162,7 +162,7 @@ def get_dataset_by_id(
         if not timeseries_set:
             if created:
                 log.info("Dataset has no timeseries, skipping")
-            return
+            return True
 
         s.commit()
         log.debug("committed", dataset_db_id=dataset_db_id)
@@ -285,13 +285,13 @@ def get_dataset_by_id(
                     RuntimeError,
                 ) as e:
                     raise KeyboardInterrupt from e
-                except Exception as e:
-                    log.exception(e)
 
                 if single:
                     break
             else:
                 log.debug("already present, skipping")
+
+    return True
 
 
 def process_timeseries(

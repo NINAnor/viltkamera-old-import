@@ -64,7 +64,7 @@ def start(dataset_id, verbose, vverbose, clean, single) -> None:
     )
 
     # get the dataset by id
-    get_dataset_by_id(
+    if not get_dataset_by_id(
         dataset_id=dataset_id,
         connection=duck_conn,
         project_path=project_path,
@@ -77,7 +77,8 @@ def start(dataset_id, verbose, vverbose, clean, single) -> None:
         log=log,
         single=single,
         s3=s3,
-    )
+    ):
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
