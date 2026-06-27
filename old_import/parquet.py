@@ -1,6 +1,4 @@
-import csv
 import json
-import pathlib
 from collections import defaultdict
 from datetime import datetime
 
@@ -19,34 +17,15 @@ from .models import (
 )
 from .utils import blur_image, get_or_create, read_image_from_url
 
-LOOKUP_PATH = pathlib.Path(__file__).parent / "camera_lookup.csv"
-_CAMERA_LOOKUP: dict[str, int] | None = None
 
-
-def get_camera_lookup() -> dict[str, int]:
-    global _CAMERA_LOOKUP
-    if _CAMERA_LOOKUP is None:
-        lookup = {}
-        with LOOKUP_PATH.open() as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row["camera_id"]:
-                    lookup[row["name"]] = int(row["camera_id"])
-        _CAMERA_LOOKUP = lookup
-    return _CAMERA_LOOKUP
-
-
-def resolve_camera_id(raw: str) -> int:
+def resolve_camera_id(raw: str) -> int | None:
     raw = raw.strip()
-    lookup = get_camera_lookup()
-    try:
-        return lookup[raw]
-    except KeyError as err:
-        raise ValueError(
-            f"Cannot resolve camera_id {raw!r}: "
-            f"not found in lookup table "
-            f"(likely test/garbage/duplicate data)"
-        ) from err
+    if raw.isdigit():
+        return int(raw)
+    base = raw.split("_")[0]
+    if base.isdigit():
+        return int(base)
+    return None
 
 
 def get_dataset_by_id(
@@ -81,15 +60,14 @@ def get_dataset_by_id(
     with Session(engine) as s:
         log.debug("Get location of this dataset")
 
-        try:
-            camera_id = resolve_camera_id(str(ds["camera_id"]))
-        except ValueError:
-            log.error(
-                "Cannot resolve camera_id",
+        camera_id = resolve_camera_id(str(ds["camera_id"]))
+        if camera_id is None:
+            log.warning(
+                "Skipping non-numeric camera_id",
                 camera_id=str(ds["camera_id"]),
                 dataset_id=dataset_id,
             )
-            return False
+            return True
         location, created = get_or_create(
             session=s,
             model=WildCamerasLocation,

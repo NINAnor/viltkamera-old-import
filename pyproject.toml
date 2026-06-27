@@ -54,7 +54,6 @@ known_first_party = ["src"]
 DEP002 = ["psycopg", "aiohttp", "pyarrow", "rich", "better-exceptions", "numpy"]
 
 [tool.hatch.build.targets.wheel]
-include = ["old_import/camera_lookup.csv", "old_import/camera_lookup.sql"]
 packages = ["old_import"]
 
 [tool.ruff]
