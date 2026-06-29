@@ -57,6 +57,11 @@ def get_dataset_by_id(
     except IndexError:
         log.error("Dataset not found", dataset_id=dataset_id)
         return False
+
+    if ds.get("status") == "failed":
+        log.warning("Skipping failed dataset", dataset_id=dataset_id)
+        return True
+
     with Session(engine) as s:
         log.debug("Get location of this dataset")
 
