@@ -2,7 +2,10 @@ import json
 from collections import defaultdict
 from datetime import datetime
 
+from io import BytesIO
+
 import duckdb
+from PIL import Image
 from dateutil import tz
 from dateutil.parser import parse
 from sqlmodel import Session, col, delete, select
@@ -15,7 +18,7 @@ from .models import (
     WildCamerasTimeseries,
     WildCamerasValidationrevision,
 )
-from .utils import blur_image, get_or_create, read_image_from_url
+from .utils import blur_image, download_raw_bytes, get_or_create
 
 
 def resolve_camera_id(raw: str) -> int | None:
@@ -301,7 +304,13 @@ def process_timeseries(
     for i in images:
         file_path = f"processed/tsimages/imported/{i['id']}"
 
-        pil_image = read_image_from_url(url=f"{image_source_path}{i['id']}", log=log)
+        raw_bytes = download_raw_bytes(f"{image_source_path}{i['id']}", log=log)
+        try:
+            pil_image = Image.open(BytesIO(raw_bytes))
+            pil_image.load()
+        except OSError:
+            log.warning("Corrupt image, storing raw bytes", image_id=i["id"])
+            pil_image = None
 
         image = WildCamerasImage(
             uuid=i["id"],
@@ -323,7 +332,7 @@ def process_timeseries(
         log = log.bind(image=image.uuid)
         log.debug("created image")
 
-        if i["id"] == i["selected_image"]:
+        if i["id"] == i["selected_image"] and pil_image:
             session.refresh(timeseries)
             session.refresh(image)
             timeseries.selected_image = image
@@ -345,13 +354,16 @@ def process_timeseries(
             )
             image.bboxes.append(box)
 
-            if bbox["label"] in label_map[1]:
+            if bbox["label"] in label_map[1] and pil_image:
                 log.debug("applying blur on bbox", label=bbox["label"])
                 pil_image = blur_image(pil_image, log=log, bbox=box)
 
         target = image_target_path + file_path
         log.debug("Saving image to s3", target=target)
-        pil_image.save(s3.open(target, "wb"), format="jpeg")
+        if pil_image:
+            pil_image.save(s3.open(target, "wb"), format="jpeg")
+        else:
+            s3.open(target, "wb").write(raw_bytes)
         log.debug("done")
 
 

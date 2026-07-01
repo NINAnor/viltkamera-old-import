@@ -1,4 +1,3 @@
-import io
 from typing import TypeVar
 
 import backoff
@@ -59,9 +58,9 @@ def get_labels(engine) -> tuple[dict[str, int], list[str]]:
     fsspec.exceptions.FSTimeoutError,
     max_time=30,
 )
-def read_image_from_url(url, log) -> Image.Image:
+def download_raw_bytes(url: str, log) -> bytes:
     with fsspec.open(url, mode="rb") as source_file:
-        return Image.open(io.BytesIO(source_file.read()))
+        return source_file.read()
 
 
 T = TypeVar("T", bound=SQLModel)
