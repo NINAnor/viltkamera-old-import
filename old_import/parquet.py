@@ -7,7 +7,7 @@ import duckdb
 import requests
 from dateutil import tz
 from dateutil.parser import parse
-from PIL import Image
+from PIL import Image, ImageFile
 from sqlmodel import Session, col, delete, select
 
 from .models import (
@@ -19,6 +19,8 @@ from .models import (
     WildCamerasValidationrevision,
 )
 from .utils import blur_image, get_or_create
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def resolve_camera_id(raw: str) -> int | None:
@@ -313,12 +315,8 @@ def process_timeseries(
                 f"{image_source_path}{i['id']}", timeout=30
             ).content
 
-        try:
-            pil_image = Image.open(BytesIO(raw_bytes))
-            pil_image.load()
-        except OSError:
-            log.warning("corrupt image, storing raw bytes", image_id=i["id"])
-            pil_image = None
+        pil_image = Image.open(BytesIO(raw_bytes))
+        pil_image.load()
 
         image = WildCamerasImage(
             uuid=i["id"],
@@ -340,7 +338,7 @@ def process_timeseries(
         log = log.bind(image=image.uuid)
         log.debug("created image")
 
-        if i["id"] == i["selected_image"] and pil_image:
+        if i["id"] == i["selected_image"]:
             session.refresh(timeseries)
             session.refresh(image)
             timeseries.selected_image = image
@@ -362,15 +360,12 @@ def process_timeseries(
             )
             image.bboxes.append(box)
 
-            if bbox["label"] in label_map[1] and pil_image:
+            if bbox["label"] in label_map[1]:
                 log.debug("applying blur on bbox", label=bbox["label"])
                 pil_image = blur_image(pil_image, log=log, bbox=box)
 
         log.debug("Saving image to s3", target=target)
-        if pil_image:
-            pil_image.save(s3.open(target, "wb"), format="jpeg")
-        else:
-            s3.open(target, "wb").write(raw_bytes)
+        pil_image.save(s3.open(target, "wb"), format="jpeg")
         log.debug("done")
 
 
