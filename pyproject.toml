@@ -25,7 +25,7 @@ dependencies = [
   "duckdb==1.5.4",
   "fsspec>=2025.7.0",
   "numpy>=2.2.6",
-  "pillow>=11.3.0",
+  "pillow>=12.3.0",
   "psycopg[binary]>=3.2.9",
   "pyarrow>=21.0.0",
   "python-dateutil>=2.9.0.post0",
