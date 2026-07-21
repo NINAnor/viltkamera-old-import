@@ -42,7 +42,7 @@ def start(dataset_id, verbose, vverbose, clean, single) -> None:
     timeseries_path = EXPORT_BASE_PATH.replace("TABLE", "timeseries")
     image_path = EXPORT_BASE_PATH.replace("TABLE", "images_metadata")
 
-    engine = create_engine(CONNECTION_STRING, echo=vverbose)
+    engine = create_engine(CONNECTION_STRING, echo=vverbose, pool_size=1)
     log = configure_logger(logging.DEBUG if verbose else logging.INFO)
 
     duck_conn = duckdb.connect()

@@ -3,11 +3,13 @@ from collections import defaultdict
 from datetime import datetime
 from io import BytesIO
 
+import backoff
 import duckdb
 import requests
 from dateutil import tz
 from dateutil.parser import parse
 from PIL import Image, ImageFile
+from sqlalchemy.exc import OperationalError
 from sqlmodel import Session, col, delete, select
 
 from .models import (
@@ -33,6 +35,7 @@ def resolve_camera_id(raw: str) -> int | None:
     return None
 
 
+@backoff.on_exception(backoff.expo, OperationalError, max_time=60)
 def get_dataset_by_id(
     dataset_id: str | int,
     project_path: str,
