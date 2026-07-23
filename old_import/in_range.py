@@ -34,7 +34,7 @@ def start_range(ctx, dataset_ids, verbose, vverbose, single) -> None:
     duck_conn = duckdb.connect()
     datasets = (
         duck_conn.execute(
-            f"select id from read_parquet('{project_path}') where id BETWEEN $1 AND $2",  # noqa: E501, S608
+            f"select id from read_parquet('{project_path}') where id::INT BETWEEN $1::INT AND $2::INT",  # noqa: E501, S608
             [dataset_ids[0], dataset_ids[1]],
         )
         .fetch_arrow_table()
