@@ -363,6 +363,7 @@ def process_timeseries(
             pil_image.load()
         else:
             resp = requests.get(f"{image_source_path}{i['id']}", timeout=30)
+            resp.raise_for_status()
             pil_image = Image.open(BytesIO(resp.content))
             pil_image.load()
 
