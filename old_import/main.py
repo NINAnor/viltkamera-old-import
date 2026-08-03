@@ -45,14 +45,14 @@ def start(dataset_id, verbose, vverbose, clean, single) -> None:
     engine = create_engine(CONNECTION_STRING, echo=vverbose, pool_size=1)
     log = configure_logger(logging.DEBUG if verbose else logging.INFO)
 
+    if clean:
+        with Session(engine) as s:
+            clean_dataset(s, dataset_id)
+            s.commit()
+        return
+
     with duckdb.connect() as duck_conn:
         duck_conn.sql("SET memory_limit = '500MB';")
-
-        if clean:
-            with Session(engine) as s:
-                clean_dataset(s, dataset_id)
-                s.commit()
-            return
 
         label_map = get_labels(engine)
 
