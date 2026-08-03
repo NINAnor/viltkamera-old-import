@@ -92,7 +92,7 @@ def get_dataset_by_id(
             },
         )
 
-        log.debug("done", object=location, created=created)
+        log.debug("done", location_id=location.id, created=created)
 
         s.flush()
 
@@ -113,10 +113,9 @@ def get_dataset_by_id(
                 "ext_id": ds["id"],
             },
         )
-        log.debug("done", object=dataset, created=created)
-
         s.flush()
         dataset_db_id = dataset.id
+        log.debug("done", dataset_db_id=dataset.id, created=created)
 
         if not created:
             old_ids = s.scalars(
@@ -238,9 +237,9 @@ def get_dataset_by_id(
                     "dataset_id": dataset_db_id,
                 },
             )
-            log.debug("done", object=timeseries, created=created)
             if created:
                 session.flush()
+                log.debug("done", timeseries_id=timeseries.id, created=created)
                 log.debug("missing, starting to populate it")
 
                 if ts["status"] == "verified":
@@ -281,6 +280,7 @@ def get_dataset_by_id(
                 if single:
                     break
             else:
+                log.debug("done", timeseries_id=timeseries.id, created=created)
                 log.debug("already present, skipping")
 
     log.info(
