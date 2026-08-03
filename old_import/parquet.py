@@ -222,7 +222,9 @@ def get_dataset_by_id(
                     "last_modified_at": parse(ts["updated_at"]),
                     "comment": "",
                     "hidden": ts["predicted_label"] == "nothing",
-                    "predicted_species_id": label_map[0][ts["predicted_label"]],
+                    "predicted_species_id": label_map[0][ts["predicted_label"]]
+                    if ts["predicted_label"]
+                    else None,
                     "validated_species_id": label_map[0][ts["ground_truth_label"]]
                     if ts["ground_truth_label"]
                     else None,
