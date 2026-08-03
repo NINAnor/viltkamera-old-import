@@ -310,16 +310,6 @@ def process_timeseries(
         file_path = f"processed/tsimages/imported/{i['id']}"
 
         target = image_target_path + file_path
-        if s3.exists(target):
-            with s3.open(target, "rb") as f:
-                raw_bytes = f.read()
-        else:
-            raw_bytes = requests.get(
-                f"{image_source_path}{i['id']}", timeout=30
-            ).content
-
-        pil_image = Image.open(BytesIO(raw_bytes))
-        pil_image.load()
 
         image = WildCamerasImage(
             uuid=i["id"],
@@ -349,6 +339,7 @@ def process_timeseries(
             log.debug("set image as selected")
 
         log.debug("populating bboxes")
+        boxes = []
         for bbox in i["predicted_boxes"]:
             session.refresh(image)
             box = WildCamerasBboxannotation(
@@ -362,13 +353,26 @@ def process_timeseries(
                 user_id=-1,
             )
             image.bboxes.append(box)
+            boxes.append(box)
 
-            if bbox["label"] in label_map[1]:
-                log.debug("applying blur on bbox", label=bbox["label"])
-                pil_image = blur_image(pil_image, log=log, bbox=box)
+        log.debug("getting image", target=target)
+        if s3.exists(target):
+            with s3.open(target, "rb") as f:
+                raw_bytes = f.read()
+            pil_image = Image.open(BytesIO(raw_bytes))
+            pil_image.load()
+        else:
+            resp = requests.get(f"{image_source_path}{i['id']}", timeout=30)
+            pil_image = Image.open(BytesIO(resp.content))
+            pil_image.load()
 
-        log.debug("Saving image to s3", target=target)
-        pil_image.save(s3.open(target, "wb"), format="jpeg")
+            for box, bbox in zip(boxes, i["predicted_boxes"], strict=True):
+                if bbox["label"] in label_map[1]:
+                    log.debug("applying blur on bbox", label=bbox["label"])
+                    pil_image = blur_image(pil_image, log=log, bbox=box)
+
+            log.debug("Saving image to s3", target=target)
+            pil_image.save(s3.open(target, "wb"), format="jpeg")
         log.debug("done")
 
 
