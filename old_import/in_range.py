@@ -59,6 +59,9 @@ def start_range(ctx, dataset_ids, verbose, vverbose, single) -> None:
         except SystemExit:
             log.warning("Dataset failed", dataset_id=dataset_id)
             failed += 1
+        except Exception as e:
+            log.warning("Dataset failed", dataset_id=dataset_id, error=str(e))
+            failed += 1
 
     log.info(
         "Range import complete",
