@@ -45,40 +45,39 @@ def start(dataset_id, verbose, vverbose, clean, single) -> None:
     engine = create_engine(CONNECTION_STRING, echo=vverbose, pool_size=1)
     log = configure_logger(logging.DEBUG if verbose else logging.INFO)
 
-    duck_conn = duckdb.connect()
+    with duckdb.connect() as duck_conn:
+        duck_conn.sql("SET memory_limit = '500MB';")
 
-    duck_conn.sql("SET memory_limit = '500MB';")
+        if clean:
+            with Session(engine) as s:
+                clean_dataset(s, dataset_id)
+                s.commit()
+            return
 
-    if clean:
-        with Session(engine) as s:
-            clean_dataset(s, dataset_id)
-            s.commit()
-        return
+        label_map = get_labels(engine)
 
-    label_map = get_labels(engine)
+        s3 = s3fs.S3FileSystem(
+            key=env("FSSPEC_S3_KEY"),
+            secret=env("FSSPEC_S3_SECRET"),
+            endpoint_url=env("FSSPEC_S3_ENDPOINT_URL"),
+        )
 
-    s3 = s3fs.S3FileSystem(
-        key=env("FSSPEC_S3_KEY"),
-        secret=env("FSSPEC_S3_SECRET"),
-        endpoint_url=env("FSSPEC_S3_ENDPOINT_URL"),
-    )
-
-    # get the dataset by id
-    if not get_dataset_by_id(
-        dataset_id=dataset_id,
-        connection=duck_conn,
-        project_path=project_path,
-        timeseries_path=timeseries_path,
-        image_path=image_path,
-        engine=engine,
-        label_map=label_map,
-        image_target_path=f"s3://{env('S3_BUCKET')}/media/",
-        image_source_path=f"{env('API_URL')}/images/",
-        log=log,
-        single=single,
-        s3=s3,
-    ):
-        raise SystemExit(1)
+        # get the dataset by id
+        if not get_dataset_by_id(
+            dataset_id=dataset_id,
+            connection=duck_conn,
+            project_path=project_path,
+            timeseries_path=timeseries_path,
+            image_path=image_path,
+            engine=engine,
+            label_map=label_map,
+            image_target_path=f"s3://{env('S3_BUCKET')}/media/",
+            image_source_path=f"{env('API_URL')}/images/",
+            log=log,
+            single=single,
+            s3=s3,
+        ):
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":
