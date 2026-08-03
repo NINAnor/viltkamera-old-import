@@ -153,57 +153,57 @@ def get_dataset_by_id(
                 log.info("Dataset has no timeseries, skipping")
             return True
 
-        s.commit()
-        log.debug("committed", dataset_db_id=dataset_db_id)
+        # Pre-fetch images for all new timeseries in one DuckDB scan
+        timeseries_ids = [ts["id"] for ts in timeseries_set]
+        images_by_timeseries = defaultdict(list)
 
-    # Pre-fetch images for all new timeseries in one DuckDB scan
-    timeseries_ids = [ts["id"] for ts in timeseries_set]
-    images_by_timeseries = defaultdict(list)
-
-    if timeseries_ids:
-        ts_images = (
-            connection.execute(
-                f"""
-                    select id, unnest(images) as image_id,
-                           generate_subscripts(images, 1) AS image_index,
-                           selected_image
-                    from read_parquet('{timeseries_path}')
-                    where id in ({", ".join("?" for _ in timeseries_ids)})
-                """,  # noqa: S608
-                timeseries_ids,
-            )
-            .fetch_arrow_table()
-            .to_pylist()
-        )
-        all_image_ids = list({r["image_id"] for r in ts_images})
-
-        if all_image_ids:
-            image_records = (
+        if timeseries_ids:
+            ts_images = (
                 connection.execute(
                     f"""
-                        select * exclude (ground_truth_label, ground_truth_boxes)
-                        from read_parquet('{image_path}')
-                        where id in ({", ".join("?" for _ in all_image_ids)})
+                        select id, unnest(images) as image_id,
+                               generate_subscripts(images, 1) AS image_index,
+                               selected_image
+                        from read_parquet('{timeseries_path}')
+                        where id in ({", ".join("?" for _ in timeseries_ids)})
                     """,  # noqa: S608
-                    all_image_ids,
+                    timeseries_ids,
                 )
                 .fetch_arrow_table()
                 .to_pylist()
             )
-            image_map = {img["id"]: img for img in image_records}
+            all_image_ids = list({r["image_id"] for r in ts_images})
 
-            for r in ts_images:
-                img_data = image_map.get(r["image_id"])
-                if img_data:
-                    combined = {
-                        **img_data,
-                        "image_index": r["image_index"],
-                        "selected_image": r["selected_image"],
-                    }
-                    images_by_timeseries[r["id"]].append(combined)
+            if all_image_ids:
+                image_records = (
+                    connection.execute(
+                        f"""
+                            select * exclude (ground_truth_label, ground_truth_boxes)
+                            from read_parquet('{image_path}')
+                            where id in ({", ".join("?" for _ in all_image_ids)})
+                        """,  # noqa: S608
+                        all_image_ids,
+                    )
+                    .fetch_arrow_table()
+                    .to_pylist()
+                )
+                image_map = {img["id"]: img for img in image_records}
 
-            for imgs in images_by_timeseries.values():
-                imgs.sort(key=lambda x: x["image_index"])
+                for r in ts_images:
+                    img_data = image_map.get(r["image_id"])
+                    if img_data:
+                        combined = {
+                            **img_data,
+                            "image_index": r["image_index"],
+                            "selected_image": r["selected_image"],
+                        }
+                        images_by_timeseries[r["id"]].append(combined)
+
+                for imgs in images_by_timeseries.values():
+                    imgs.sort(key=lambda x: x["image_index"])
+
+        s.commit()
+        log.debug("committed", dataset_db_id=dataset_db_id)
 
     images_ok = 0
     errors = 0
