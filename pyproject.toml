@@ -17,7 +17,7 @@ authors = [
 # PEP 621 project metadata
 # See https://www.python.org/dev/peps/pep-0621/
 dependencies = [
-  "aiohttp>=3.12.15",
+  "aiohttp>=3.14.3",
   "backoff>=2.2.1",
   "better-exceptions>=0.3.3",
   "click>=8.2.1",
