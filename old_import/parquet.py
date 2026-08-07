@@ -319,7 +319,7 @@ def process_timeseries(
             metadata_=json.loads(i["exif"]),
             captured_at=i["taken_at"],
             dataset_id=dataset_id,
-            classified_at=parse(i["predicted_at"]),
+            classified_at=parse(i["predicted_at"]) if i["predicted_at"] else None,
             # TODO: set the file path
             file=file_path,
             # Naively set hidden on images predicted as
