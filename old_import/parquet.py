@@ -20,19 +20,24 @@ from .models import (
     WildCamerasTimeseries,
     WildCamerasValidationrevision,
 )
-from .utils import blur_image, get_or_create
+from .utils import blur_image, get_camera_mapping, get_or_create
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
-def resolve_camera_id(raw: str) -> int | None:
+def resolve_camera_id(raw: str) -> tuple[str, int | None]:
+    """Return the mapping table's decision and location id for a camera_id.
+
+    Unknown ids raise ValueError, so a typo is never coerced into the location
+    of some other camera.
+    """
     raw = raw.strip()
     if raw.isdigit():
-        return int(raw)
-    base = raw.split("_")[0]
-    if base.isdigit():
-        return int(base)
-    return None
+        return "import", int(raw)
+    try:
+        return get_camera_mapping()[raw]
+    except KeyError:
+        raise ValueError(f"camera_id {raw!r} is not in camera_mapping.csv") from None
 
 
 @backoff.on_exception(backoff.expo, OperationalError, max_time=60)
@@ -73,10 +78,10 @@ def get_dataset_by_id(
     with Session(engine) as s:
         log.debug("Get location of this dataset")
 
-        camera_id = resolve_camera_id(str(ds["camera_id"]))
-        if camera_id is None:
+        decision, camera_id = resolve_camera_id(str(ds["camera_id"]))
+        if decision != "import":
             log.warning(
-                "Skipping non-numeric camera_id",
+                f"Skipping dataset: camera_id is {decision} in camera_mapping.csv",
                 camera_id=str(ds["camera_id"]),
                 dataset_id=dataset_id,
             )

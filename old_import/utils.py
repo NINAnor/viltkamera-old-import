@@ -1,3 +1,5 @@
+import csv
+import pathlib
 from typing import TypeVar
 
 import backoff
@@ -10,6 +12,24 @@ from sqlalchemy import ColumnElement, exc
 from sqlmodel import Session, SQLModel, select
 
 from .models import WildCamerasAnnotationlabel, WildCamerasBboxannotation
+
+CAMERA_MAPPING_PATH = pathlib.Path(__file__).parent / "camera_mapping.csv"
+_camera_mapping: dict[str, tuple[str, int | None]] | None = None
+
+
+def get_camera_mapping() -> dict[str, tuple[str, int | None]]:
+    """old camera_id -> (decision, location id); see camera_mapping.csv."""
+    global _camera_mapping
+    if _camera_mapping is None:
+        with CAMERA_MAPPING_PATH.open(encoding="utf-8") as f:
+            _camera_mapping = {
+                row["old_camera_id"]: (
+                    row["decision"],
+                    int(row["new_camera_id"]) if row["decision"] == "import" else None,
+                )
+                for row in csv.DictReader(f)
+            }
+    return _camera_mapping
 
 
 @backoff.on_exception(
